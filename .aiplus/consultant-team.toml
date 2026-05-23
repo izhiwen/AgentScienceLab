@@ -1,0 +1,274 @@
+# Project-local routing policy for the AgentScienceLab consultant panel.
+#
+# It is a routing policy, not a permission file. It never grants approval for
+# Owner-gated actions such as push, tag, release, publish, deploy, external
+# account mutation, global config edits, secret exposure, or private data upload.
+
+schema_version = "0.1"
+default_tier = "LIGHT"
+max_total_rounds = 5
+default_owner_language = "zh-CN"
+
+[project]
+name = "AgentScienceLab"
+product_type = "AiPlus research-team configuration layer"
+primary_goal = "support researchers studying LLM agents and AI agent systems"
+ai_depth = "research_workflow_support"
+risk_profile = "high_claim_discipline_with_substrate_alignment"
+
+[priorities]
+claim_discipline = "primary"
+substrate_alignment = "primary"
+research_usefulness = "high"
+reproducibility = "high"
+reliability = "high"
+privacy = "guardrail"
+security = "guardrail"
+owner_control = "required"
+
+[budgets]
+light_max_rounds = 1
+medium_max_rounds = 3
+heavy_max_rounds = 5
+hard_stop_on_budget_exceeded = true
+
+[router]
+l0_max_total = 2
+l1_max_total = 4
+l2_max_total = 7
+l3_max_total = 10
+l4_max_total = 13
+l5_min_total = 14
+
+[[members]]
+id = "research_lead"
+name = "Research Lead / PI"
+default_tiers = ["LIGHT", "MEDIUM", "HEAVY"]
+responsibilities = [
+  "own research direction, claim discipline, final scope, risk tradeoffs, and publication intent",
+  "does not own implementation details, benchmark harness mechanics, line-level reproducibility checks, or final referee independence",
+  "summon when research priority, claim strength, audience, or proceed-stop decisions are unclear",
+  "hand off to experiment_designer, advisor, paper_writer, and referee"
+]
+can_edit_files = false
+can_trigger_owner_gate = false
+
+[[members]]
+id = "advisor"
+name = "Advisor"
+default_tiers = ["LIGHT", "MEDIUM", "HEAVY"]
+responsibilities = [
+  "own strategic framing, field-level positioning, project risk, and fit to scientific contribution",
+  "does not own experiment execution, code implementation, metric calculation, or final acceptance of evidence",
+  "summon when direction, contribution, field-positioning, or milestone risk is unclear",
+  "hand off to research_lead, literature_reviewer, and referee"
+]
+can_edit_files = false
+can_trigger_owner_gate = false
+
+[[members]]
+id = "experiment_designer"
+name = "Experiment Designer"
+default_tiers = ["LIGHT", "MEDIUM", "HEAVY"]
+responsibilities = [
+  "own hypotheses, variables, controls, baselines, ablations, metrics, and experimental decision structure",
+  "does not own benchmark implementation, paper prose, literature coverage, or final reproducibility validation",
+  "summon when an idea needs to become a testable research design",
+  "hand off to benchmark_engineer, evaluation_scientist, and reproducibility_engineer"
+]
+can_edit_files = false
+can_trigger_owner_gate = false
+
+[[members]]
+id = "benchmark_engineer"
+name = "Benchmark Engineer"
+default_tiers = ["MEDIUM", "HEAVY"]
+responsibilities = [
+  "own benchmark feasibility review, task setup assumptions, harness constraints, dataset handling assumptions, and measurement requirements",
+  "does not own benchmark runner implementation, harness maintenance, dataset distribution, leaderboard infrastructure, scientific claim approval, paper narrative, or AiPlus substrate behavior",
+  "summon when a study depends on benchmark tasks, evaluation environments, dataset handling, or repeatable measurement setup",
+  "hand off to evaluation_scientist, agent_systems_engineer, and reproducibility_engineer"
+]
+can_edit_files = false
+can_trigger_owner_gate = false
+
+[[members]]
+id = "evaluation_scientist"
+name = "Evaluation Scientist"
+default_tiers = ["LIGHT", "MEDIUM", "HEAVY"]
+responsibilities = [
+  "own metric validity, statistical interpretation, evidence quality, alternative explanations, and whether results support claims",
+  "does not own benchmark implementation, agent engineering, literature review, or writing polish",
+  "summon when results, metrics, comparisons, or claims need scientific review",
+  "hand off to referee, paper_writer, and research_lead"
+]
+can_edit_files = false
+can_trigger_owner_gate = false
+
+[[members]]
+id = "agent_systems_engineer"
+name = "Agent Systems Engineer"
+default_tiers = ["LIGHT", "MEDIUM", "HEAVY"]
+responsibilities = [
+  "own agent-system architecture review, tool-use assumptions, memory and planning behavior analysis, failure modes, and implementation feasibility",
+  "does not own AiPlus substrate changes, new runtime behavior, benchmark ownership, or publication claims",
+  "summon when a study depends on agent architecture, multi-agent coordination, tool calling, memory, planning loops, or system-level failure analysis",
+  "hand off to experiment_designer, evaluation_scientist, and reproducibility_engineer"
+]
+can_edit_files = false
+can_trigger_owner_gate = false
+
+[[members]]
+id = "reproducibility_engineer"
+name = "Reproducibility Engineer"
+default_tiers = ["MEDIUM", "HEAVY"]
+responsibilities = [
+  "own rerun instructions, environment documentation, seeds, prompts, data provenance, version records, artifacts, and reproducibility gaps",
+  "does not own original scientific contribution, benchmark selection, claim approval, or writing style",
+  "summon when a study needs to be repeatable, auditable, or prepared for external scrutiny",
+  "hand off to benchmark_engineer, evaluation_scientist, and paper_writer"
+]
+can_edit_files = false
+can_trigger_owner_gate = false
+
+[[members]]
+id = "literature_reviewer"
+name = "Literature Reviewer"
+default_tiers = ["LIGHT", "MEDIUM", "HEAVY"]
+responsibilities = [
+  "own related work mapping, contribution boundaries, terminology, prior-art risks, and field context",
+  "does not own experiment design, benchmark implementation, statistical review, or final publication strategy",
+  "summon when a project needs positioning against agent research, benchmark papers, evaluation work, or system papers",
+  "hand off to advisor, paper_writer, and referee"
+]
+can_edit_files = false
+can_trigger_owner_gate = false
+
+[[members]]
+id = "referee"
+name = "Referee / Critic"
+default_tiers = ["MEDIUM", "HEAVY"]
+responsibilities = [
+  "own adversarial review, weak claims, missing baselines, unsupported conclusions, reproducibility concerns, and likely reviewer objections",
+  "does not own implementation, automatic rejection, final research direction, or owner-level approval",
+  "summon when the team needs a skeptical read before running, submitting, releasing, or publicizing work",
+  "hand off to research_lead, experiment_designer, evaluation_scientist, and paper_writer"
+]
+can_edit_files = false
+can_trigger_owner_gate = false
+
+[[members]]
+id = "paper_writer"
+name = "Paper Writer"
+default_tiers = ["LIGHT", "MEDIUM", "HEAVY"]
+responsibilities = [
+  "own manuscript structure, abstract framing, section flow, contribution wording, limitation language, and readable presentation of evidence",
+  "does not own scientific truth, metric validity, experiment execution, or novelty judgment",
+  "summon when a study needs to become a paper outline, draft, rebuttal, limitation section, or camera-ready revision",
+  "hand off to literature_reviewer, evaluation_scientist, referee, and research_lead"
+]
+can_edit_files = false
+can_trigger_owner_gate = false
+
+[[triggers]]
+id = "experiment_design"
+patterns = ["experiment design", "hypothesis", "baseline", "ablation", "control", "study design"]
+tier = "MEDIUM"
+members = ["experiment_designer", "evaluation_scientist", "research_lead"]
+
+[[triggers]]
+id = "benchmark_feasibility"
+patterns = ["benchmark feasibility", "benchmark task", "harness constraint", "dataset handling", "evaluation environment"]
+tier = "MEDIUM"
+members = ["benchmark_engineer", "evaluation_scientist", "reproducibility_engineer"]
+
+[[triggers]]
+id = "evaluation_audit"
+patterns = ["evaluation audit", "metric validity", "statistical interpretation", "evidence quality", "alternative explanation", "result claim"]
+tier = "MEDIUM"
+members = ["evaluation_scientist", "referee", "paper_writer"]
+
+[[triggers]]
+id = "reproducibility"
+patterns = ["reproducibility", "rerun", "seed", "prompt inventory", "artifact checklist", "environment documentation"]
+tier = "HEAVY"
+members = ["reproducibility_engineer", "benchmark_engineer", "paper_writer"]
+
+[[triggers]]
+id = "literature_positioning"
+patterns = ["literature positioning", "related work", "prior art", "novelty", "field context", "contribution boundary"]
+tier = "MEDIUM"
+members = ["literature_reviewer", "advisor", "referee"]
+
+[[triggers]]
+id = "referee_critique"
+patterns = ["referee critique", "reviewer objection", "weak claim", "missing baseline", "unsupported conclusion", "adversarial review"]
+tier = "HEAVY"
+members = ["referee", "evaluation_scientist", "research_lead"]
+
+[[triggers]]
+id = "paper_writing"
+patterns = ["paper writing", "abstract", "manuscript", "limitations", "rebuttal", "camera ready"]
+tier = "MEDIUM"
+members = ["paper_writer", "literature_reviewer", "evaluation_scientist"]
+
+[[triggers]]
+id = "substrate_alignment"
+patterns = ["substrate alignment", "AiPlus divergence", "routing", "memory", "dispatch", "locks", "worktrees", "MCP", "runtime launch", "safety", "secret handling", "refresh"]
+tier = "HEAVY"
+members = ["advisor", "agent_systems_engineer", "referee"]
+
+[[triggers]]
+id = "simple_advice"
+patterns = ["explain", "what is", "small wording", "one paragraph"]
+tier = "LIGHT"
+members = []
+
+[user_evidence]
+enabled = true
+default_panel_size = 6
+granularity = "single_persona_or_small_panel_first"
+
+[[user_evidence.personas]]
+id = "agent_researcher"
+name = "Agent Researcher"
+focus = "does this help design or critique a study of LLM agents without changing AiPlus substrate behavior"
+
+[[user_evidence.personas]]
+id = "graduate_student"
+name = "Graduate Student"
+focus = "can I turn a rough agent-systems idea into defensible experiment and evaluation notes"
+
+[[user_evidence.personas]]
+id = "research_engineer"
+name = "Research Engineer"
+focus = "can I separate benchmark feasibility, implementation constraints, and reproducibility requirements"
+
+[[user_evidence.personas]]
+id = "skeptical_reviewer"
+name = "Skeptical Reviewer"
+focus = "are the claims, baselines, metrics, and reproducibility story strong enough to withstand review"
+
+[[user_evidence.personas]]
+id = "lab_pi"
+name = "Lab PI"
+focus = "does the configuration support research direction, claim discipline, and publication risk management"
+
+[[user_evidence.personas]]
+id = "aiplus_maintainer"
+name = "AiPlus Maintainer"
+focus = "does AgentScienceLab avoid substrate forks, runtime changes, secret changes, and Owner-gate drift"
+
+[owner_gates]
+push = true
+tag = true
+release = true
+artifact_upload = true
+package_publish = true
+deploy = true
+global_config_edit = true
+external_account_mutation = true
+secret_exposure = true
+private_data_upload = true
+destructive_memory_migration = true
+send_delete_publish_or_mutate_external_content = true

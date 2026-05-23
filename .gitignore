@@ -1,0 +1,27 @@
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Local editor and runtime noise.
+.idea/
+.vscode/
+*.log
+*.tmp
+*.bak
+
+# Runtime adapters and local assistant configuration.
+.agents/
+.claude/
+.codex/
+.opencode/
+.mcp.json
+opencode.json
+AGENTS.md
+CLAUDE.md
+
+# AiPlus runtime/local/private state. Keep only the public ASL consultant policy.
+.aiplus/*
+!.aiplus/
+!.aiplus/consultant-team.toml
