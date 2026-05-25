@@ -1,0 +1,28 @@
+schema_version = "1.0"
+
+[agent]
+role = "paper-writer"
+display_name = "Paper Writer"
+tier = "internal_core"
+default_specialty = "TODO Stage 2b"
+warm_bench_ttl_seconds = 1800
+
+[persona]
+system_prompt_file = "personas/paper-writer.md"
+voice = "paper-writer"
+escalation_target = "pi"
+
+[workspace]
+needs_worktree = false
+worktree_branch = "agent/paper-writer"
+worktree_path = "../{project_name}.paper-writer"
+
+[memory]
+personal_dir = ".aiplus/agent-memory/paper-writer"
+read_team_memory = true
+read_project_memory = true
+write_team_memory = false
+
+[invocation]
+chinese_aliases = ["TODO Stage 2b"]
+english_aliases = ["paper-writer", "TODO Stage 2b"]

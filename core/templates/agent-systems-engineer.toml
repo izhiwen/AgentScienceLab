@@ -1,0 +1,28 @@
+schema_version = "1.0"
+
+[agent]
+role = "agent-systems-engineer"
+display_name = "Agent Systems Engineer"
+tier = "internal_core"
+default_specialty = "TODO Stage 2b"
+warm_bench_ttl_seconds = 1800
+
+[persona]
+system_prompt_file = "personas/agent-systems-engineer.md"
+voice = "agent-systems-engineer"
+escalation_target = "pi"
+
+[workspace]
+needs_worktree = false
+worktree_branch = "agent/agent-systems-engineer"
+worktree_path = "../{project_name}.agent-systems-engineer"
+
+[memory]
+personal_dir = ".aiplus/agent-memory/agent-systems-engineer"
+read_team_memory = true
+read_project_memory = true
+write_team_memory = false
+
+[invocation]
+chinese_aliases = ["TODO Stage 2b"]
+english_aliases = ["agent-systems-engineer", "TODO Stage 2b"]

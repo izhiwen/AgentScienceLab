@@ -1,0 +1,28 @@
+schema_version = "1.0"
+
+[agent]
+role = "evaluation-scientist"
+display_name = "Evaluation Scientist"
+tier = "internal_core"
+default_specialty = "TODO Stage 2b"
+warm_bench_ttl_seconds = 1800
+
+[persona]
+system_prompt_file = "personas/evaluation-scientist.md"
+voice = "evaluation-scientist"
+escalation_target = "pi"
+
+[workspace]
+needs_worktree = false
+worktree_branch = "agent/evaluation-scientist"
+worktree_path = "../{project_name}.evaluation-scientist"
+
+[memory]
+personal_dir = ".aiplus/agent-memory/evaluation-scientist"
+read_team_memory = true
+read_project_memory = true
+write_team_memory = false
+
+[invocation]
+chinese_aliases = ["TODO Stage 2b"]
+english_aliases = ["evaluation-scientist", "TODO Stage 2b"]

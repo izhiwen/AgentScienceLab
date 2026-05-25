@@ -1,0 +1,28 @@
+schema_version = "1.0"
+
+[agent]
+role = "reproducibility-engineer"
+display_name = "Reproducibility Engineer"
+tier = "internal_core"
+default_specialty = "TODO Stage 2b"
+warm_bench_ttl_seconds = 1800
+
+[persona]
+system_prompt_file = "personas/reproducibility-engineer.md"
+voice = "reproducibility-engineer"
+escalation_target = "pi"
+
+[workspace]
+needs_worktree = false
+worktree_branch = "agent/reproducibility-engineer"
+worktree_path = "../{project_name}.reproducibility-engineer"
+
+[memory]
+personal_dir = ".aiplus/agent-memory/reproducibility-engineer"
+read_team_memory = true
+read_project_memory = true
+write_team_memory = false
+
+[invocation]
+chinese_aliases = ["TODO Stage 2b"]
+english_aliases = ["reproducibility-engineer", "TODO Stage 2b"]

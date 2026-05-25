@@ -17,23 +17,26 @@
   "requiredFiles": [
     "core/templates/advisor.toml",
     "core/templates/pi.toml",
-    "core/templates/theorist.toml",
-    "core/templates/pm.toml",
-    "core/templates/ra-stata.toml",
-    "core/templates/ra-python.toml",
+    "core/templates/experiment-designer.toml",
+    "core/templates/benchmark-engineer.toml",
+    "core/templates/evaluation-scientist.toml",
+    "core/templates/agent-systems-engineer.toml",
+    "core/templates/reproducibility-engineer.toml",
+    "core/templates/literature-reviewer.toml",
     "core/templates/referee.toml",
-    "core/templates/replicator.toml",
-    "core/templates/econ-team.toml",
+    "core/templates/paper-writer.toml",
+    "core/templates/agent-science-team.toml",
     "core/templates/consultant-team.agentsciencelab.toml",
-    "core/templates/experts/dof-auditor.toml",
-    "core/templates/experts/dof-auditor.md",
-    "core/templates/experts/llm-measurement.toml",
-    "core/templates/experts/rr-strategist.toml",
-    "core/templates/experts/rr-strategist.md",
     "core/templates/personas/advisor.md",
-    "core/templates/personas/dof-auditor.md",
-    "core/templates/personas/llm-measurement.md",
-    "core/templates/personas/rr-strategist.md",
+    "core/templates/personas/pi.md",
+    "core/templates/personas/experiment-designer.md",
+    "core/templates/personas/benchmark-engineer.md",
+    "core/templates/personas/evaluation-scientist.md",
+    "core/templates/personas/agent-systems-engineer.md",
+    "core/templates/personas/reproducibility-engineer.md",
+    "core/templates/personas/literature-reviewer.md",
+    "core/templates/personas/referee.md",
+    "core/templates/personas/paper-writer.md",
     "adapters/codex/subagents.toml",
     "adapters/claude-code/subagents.toml",
     "adapters/claude-code/claude-md-block.md",
@@ -70,8 +73,8 @@
   "doctorChecks": [
     {
       "id": "agent-configs",
-      "path": "core/templates/econ-team.toml",
-      "description": "Econ team configuration file is present."
+      "path": "core/templates/agent-science-team.toml",
+      "description": "ASL research-team configuration file is present."
     },
     {
       "id": "personas",
@@ -84,29 +87,9 @@
       "description": "PI agent config is present for worktree readiness."
     },
     {
-      "id": "team-config",
-      "path": "core/templates/pm.toml",
-      "description": "PM agent config is present for team coordination."
-    },
-    {
       "id": "consultant-team",
       "path": "core/templates/consultant-team.agentsciencelab.toml",
       "description": "ASL research-tuned consultant team config is present."
-    },
-    {
-      "id": "dof-auditor-expert",
-      "path": "core/templates/experts/dof-auditor.toml",
-      "description": "DOF-Auditor expert is present."
-    },
-    {
-      "id": "llm-measurement-expert",
-      "path": "core/templates/experts/llm-measurement.toml",
-      "description": "LLM-as-Measurement Specialist expert is present (paired with consultant seat 5)."
-    },
-    {
-      "id": "rr-strategist-expert",
-      "path": "core/templates/experts/rr-strategist.toml",
-      "description": "RR-Strategist expert is present."
     },
     {
       "id": "codex-subagents-manifest",

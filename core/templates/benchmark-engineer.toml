@@ -1,0 +1,28 @@
+schema_version = "1.0"
+
+[agent]
+role = "benchmark-engineer"
+display_name = "Benchmark Engineer"
+tier = "internal_core"
+default_specialty = "TODO Stage 2b"
+warm_bench_ttl_seconds = 1800
+
+[persona]
+system_prompt_file = "personas/benchmark-engineer.md"
+voice = "benchmark-engineer"
+escalation_target = "pi"
+
+[workspace]
+needs_worktree = false
+worktree_branch = "agent/benchmark-engineer"
+worktree_path = "../{project_name}.benchmark-engineer"
+
+[memory]
+personal_dir = ".aiplus/agent-memory/benchmark-engineer"
+read_team_memory = true
+read_project_memory = true
+write_team_memory = false
+
+[invocation]
+chinese_aliases = ["TODO Stage 2b"]
+english_aliases = ["benchmark-engineer", "TODO Stage 2b"]
