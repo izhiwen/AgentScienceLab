@@ -48,8 +48,6 @@ AgentScienceLab v0.1 is a configuration and documentation layer. It is not a sta
 
 AgentScienceLab v0.1 does not provide ASL-specific CLI commands. You bring a research role into the conversation through your normal AiPlus workflow, for example by referring to the role by name in your AiPlus session. Future module onboarding may add ASL-specific commands; until then, treat role names as documentation labels.
 
-Use AgentScienceLab by bringing the relevant research role into the conversation through your normal AiPlus workflow. The role names in this repository are documentation-level labels unless runtime role configuration is explicitly added later.
-
 Common starting points:
 
 - Ask Advisor to pressure-test whether a research idea has a clear contribution and field position.
