@@ -1,6 +1,6 @@
 # AgentScienceLab
 
-**A virtual research team for the science of AI agents, built as a configuration layer on AiPlus.**
+**AgentScienceLab is an AiPlus-powered virtual research-team configuration for researchers studying LLM agents and AI agent systems.**
 
 AgentScienceLab is a public research-team configuration for people studying LLM agents and AI agent systems. It packages research-facing roles, documentation-level aliases, consultant policy, and narrative examples for using an AiPlus-powered virtual team to reason about agent experiments, evaluations, reproducibility, literature context, criticism, and writing.
 
@@ -29,14 +29,9 @@ It is most useful when you want structured help with:
 
 ## What It Does Not Do
 
-- It does not provide an agent framework.
-- It does not ship a benchmark suite.
-- It does not operate a leaderboard.
-- It does not run an autonomous scientist loop.
-- It does not fork or replace AiPlus substrate behavior.
-- It does not replace existing agent engineering tools.
+In short: AgentScienceLab is not an agent framework, benchmark runner, benchmark suite, leaderboard, autonomous scientist, AiPlus substrate fork, or replacement for existing agent engineering tools. See [Non-goals](docs/non-goals.md) for the full boundary.
 
-## Quick Start
+## Clone And Read
 
 Prerequisite: AiPlus should already be installed and configured in the environment where you plan to use AgentScienceLab.
 
@@ -47,9 +42,11 @@ git clone https://github.com/izhiwen/AgentScienceLab.git
 cd AgentScienceLab
 ```
 
-AgentScienceLab v0.1 is a configuration and documentation layer. It is not a standalone executable package, and it does not currently provide a one-command installer. Use it as an AiPlus-aligned research-team configuration and public reference for roles, boundaries, workflows, and examples.
+AgentScienceLab v0.1 is a configuration and documentation layer. It is not a standalone executable package, and it does not currently provide a one-command installer. Use it as an AiPlus-aligned research-team configuration and public reference for roles, boundaries, workflows, and examples, then continue with the usage patterns below.
 
 ## How To Use It
+
+AgentScienceLab v0.1 does not provide ASL-specific CLI commands. You bring a research role into the conversation through your normal AiPlus workflow, for example by referring to the role by name in your AiPlus session. Future module onboarding may add ASL-specific commands; until then, treat role names as documentation labels.
 
 Use AgentScienceLab by bringing the relevant research role into the conversation through your normal AiPlus workflow. The role names in this repository are documentation-level labels unless runtime role configuration is explicitly added later.
 
@@ -82,6 +79,8 @@ Any proposed divergence from AiPlus substrate behavior should be treated as a bu
 AgentScienceLab is currently at a v0.1 public docs and configuration baseline.
 
 - Runtime role aliases are documentation-level unless explicitly added later.
+- Role IDs, aliases, and module shape may change as AiPlus module onboarding is finalized.
+- AiPlus module onboarding for AgentScienceLab is currently a proposal in the AiPlus repository, not an implemented installer. Until then, AgentScienceLab is not installable via `aiplus add asl`.
 - The repository has no release or tag yet.
 - v0.1 does not include a CLI wrapper, benchmark runner, leaderboard, autonomous scientist loop, runtime roster replacement, or substrate behavior change.
 
