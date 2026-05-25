@@ -1,0 +1,1219 @@
+#!/usr/bin/env bash
+# ASL independent CLI wrapper.
+
+set -euo pipefail
+
+ASL_VERSION="${ASL_VERSION:-0.1.0}"
+ASL_REPO="${ASL_REPO:-izhiwen/AgentScienceLab}"
+ASL_INSTALL_DIR="${ASL_INSTALL_DIR:-$HOME/.local/bin}"
+ASL_LIBEXEC_DIR="${ASL_LIBEXEC_DIR:-$(dirname "$ASL_INSTALL_DIR")/libexec}"
+export AIPLUS_BRAND="${AIPLUS_BRAND:-ASL}"
+export AIPLUS_TEAM="${AIPLUS_TEAM:-agentsciencelab}"
+export AIPLUS_DEFAULT_ROLE="${AIPLUS_DEFAULT_ROLE:-pi}"
+
+die() {
+  printf 'asl: %s\n' "$*" >&2
+  exit 1
+}
+
+script_path="${BASH_SOURCE[0]}"
+while [ -L "$script_path" ]; do
+  link="$(readlink "$script_path")"
+  if [[ "$link" = /* ]]; then
+    script_path="$link"
+  else
+    script_path="$(cd "$(dirname "$script_path")" && pwd)/$link"
+  fi
+done
+
+ASL_BIN_DIR="$(cd "$(dirname "$script_path")" && pwd)"
+ASL_ROOT="$(cd "$ASL_BIN_DIR" && pwd)"
+if [ -d "$ASL_BIN_DIR/../libexec" ]; then
+  ASL_ROOT="$(cd "$ASL_BIN_DIR/.." && pwd)"
+fi
+
+usage() {
+  cat <<'EOF'
+ASL 0.3.0
+
+Usage:
+  asl install [codex|claude-code|opencode|all]   set up the research team here (once per project)
+  asl update [--dry-run]                          update the installed asl CLI
+  asl uninstall [--purge] [--yes]                 remove the installed asl CLI
+  asl                                            open the lobby — pick or describe who you want to talk to
+  asl <role>                                     shortcut: resume the last chat with that role
+  asl status                                     show installed team + active runtime
+  asl refresh [--dry-run]                        refresh managed project assets
+  asl doctor [--fix] [--yes]                     self-check and fix common drift
+
+Roles you can chat with directly:
+  asl pi                                         项目经理 — 派单、跟进、汇总
+  asl advisor                                    顾问 — 反思、识别策略、框架
+  asl writer                                     写手 — 起草段落、引言、改稿
+  asl ra-stata                                   实证 RA — 回归、表格、Stata
+  asl ra-python                                  数据 RA — 清洗、合并、Python
+  asl theorist                                   理论 — 识别假设、模型
+  asl referee                                    内审 — 内部自审
+  asl replicator                                 复现 — clean-room 复跑
+  asl pm                                         项目管理 — Gantt、deadline
+
+Advanced (you rarely need these once you are in chat):
+  asl talk [--runtime RUNTIME] <role> [prompt...]
+  asl talk --resume <role> [--last|--list]
+  asl route <role> <task...>
+  asl update [--dry-run]
+  asl uninstall [--purge] [--yes]
+  asl --version
+
+Environment variables:
+  ASL_AIPLUS_BIN=/path/to/asl-support           use a specific bundled runtime
+
+Recommended flow:
+  asl                               # auto-sets-up the team on first run, then opens the lobby
+                                    # type/say who you want (PI, Advisor, ...)
+                                    # or "我想反思 RD 设计" and it routes you to Advisor
+
+Two-window pattern (for serious paper work):
+  Window 1: asl advisor             # consult on framing / identification
+  Window 2: asl pi                  # issue execution instructions
+
+Examples:
+  asl install
+  asl update --dry-run                # preview an available CLI update
+  asl uninstall --yes                 # remove the installed CLI, keep project files
+  asl                               # opens the lobby
+  asl pi                            # resume PI for this project
+  asl advisor                       # resume Advisor for this project
+  asl advisor --fresh               # open a new Advisor session
+EOF
+}
+
+talk_usage() {
+  cat <<'EOF'
+ASL talk
+
+Usage:
+  asl talk [--runtime RUNTIME] <role> [prompt...]
+  asl talk [--runtime RUNTIME] --resume <role> [--last|--list]
+
+Options:
+  --runtime RUNTIME   use codex, claude-code, or opencode
+  --resume            resume a previous session for this role in this project
+  --last              resume the most recent matching session without a picker
+  --list              list matching sessions and exit
+EOF
+}
+
+install_dir() {
+  printf '%s\n' "${ASL_INSTALL_DIR:-$HOME/.local/bin}"
+}
+
+libexec_dir() {
+  local dir
+  if [ -n "${ASL_LIBEXEC_DIR:-}" ]; then
+    printf '%s\n' "$ASL_LIBEXEC_DIR"
+  else
+    dir="$(install_dir)"
+    printf '%s\n' "$(dirname "$dir")/libexec"
+  fi
+}
+
+normalize_version() {
+  printf '%s\n' "${1#v}"
+}
+
+current_installed_version() {
+  local installed version_out=""
+  installed="$(install_dir)/asl"
+  if [ -x "$installed" ]; then
+    version_out="$(ASL_NO_ONBOARDING=1 "$installed" --version 2>/dev/null || true)"
+  fi
+  if [ -z "$version_out" ]; then
+    version_out="$(ASL_NO_ONBOARDING=1 "$0" --version 2>/dev/null || true)"
+  fi
+  printf '%s\n' "$version_out" | awk '/^ASL / {print $2; exit}'
+}
+
+latest_release_version() {
+  if [ -n "${ASL_UPDATE_LATEST_VERSION:-}" ]; then
+    printf '%s\n' "$ASL_UPDATE_LATEST_VERSION"
+    return 0
+  fi
+
+  local latest_url effective version
+  latest_url="${ASL_RELEASES_LATEST_URL:-https://github.com/$ASL_REPO/releases/latest}"
+  command -v curl >/dev/null 2>&1 || die "curl is required to check for updates"
+  effective="$(curl -fsSL -o /dev/null -w '%{url_effective}' "$latest_url")" \
+    || die "could not resolve latest ASL release"
+  version="$(printf '%s\n' "$effective" | sed -E 's#^.*/tag/##')"
+  [ -n "$version" ] || die "could not parse latest ASL release from: $effective"
+  printf '%s\n' "$version"
+}
+
+detect_asset_for_version() {
+  local version_no_v os arch
+  version_no_v="$(normalize_version "$1")"
+  os="$(uname -s)"
+  arch="$(uname -m)"
+  case "$arch" in
+    x86_64|amd64) arch="x86_64" ;;
+    arm64|aarch64) arch="aarch64" ;;
+  esac
+  case "$os:$arch" in
+    Darwin:aarch64|Darwin:x86_64)
+      printf 'asl-v%s-darwin-%s.tar.gz\n' "$version_no_v" "$arch"
+      ;;
+    Linux:aarch64|Linux:x86_64)
+      printf 'asl-v%s-linux-%s.tar.gz\n' "$version_no_v" "$arch"
+      ;;
+    *)
+      die "no ASL release package for: $os $arch"
+      ;;
+  esac
+}
+
+fetch_url() {
+  local src="$1" dst="$2"
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL "$src" -o "$dst"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -q "$src" -O "$dst"
+  else
+    die "curl or wget is required"
+  fi
+}
+
+verify_sha256() {
+  local sidecar="$1" asset="$2" asset_name expected check_file
+  asset_name="$(basename "$asset")"
+  expected="$(awk '{print $1}' "$sidecar" | head -n 1)"
+  [ -n "$expected" ] || die "checksum sidecar is empty: $sidecar"
+  check_file="$(dirname "$asset")/asset.sha256"
+  printf '%s  %s\n' "$expected" "$asset_name" >"$check_file"
+  if command -v shasum >/dev/null 2>&1; then
+    (cd "$(dirname "$asset")" && shasum -a 256 -c "$check_file")
+  elif command -v sha256sum >/dev/null 2>&1; then
+    (cd "$(dirname "$asset")" && sha256sum -c "$check_file")
+  else
+    die "shasum or sha256sum is required for checksum verification"
+  fi
+}
+
+substrate_bin() {
+  local exe="aiplus"
+  if [[ "${OS:-}" = "Windows_NT" ]]; then
+    exe="aiplus.exe"
+  fi
+
+  local -a candidates=()
+  if [ -n "${ASL_AIPLUS_BIN:-}" ]; then
+    candidates+=("$ASL_AIPLUS_BIN")
+  fi
+  candidates+=(
+    "$ASL_BIN_DIR/libexec/asl-support"
+    "$ASL_BIN_DIR/../libexec/asl-support"
+    "$ASL_ROOT/libexec/asl-support"
+    "$ASL_BIN_DIR/libexec/$exe"
+    "$ASL_BIN_DIR/../libexec/$exe"
+    "$ASL_ROOT/libexec/$exe"
+    "$ASL_ROOT/vendor/aiplus/target/release/$exe"
+  )
+
+  local candidate
+  for candidate in "${candidates[@]}"; do
+    if [ -x "$candidate" ]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  die "bundled runtime not built. Run: scripts/build-asl.sh"
+}
+
+run_substrate_quiet() {
+  local bin tmp status
+  bin="$(substrate_bin)"
+  tmp="$(mktemp)"
+  if "$bin" "$@" >"$tmp" 2>&1; then
+    rm -f "$tmp"
+    return 0
+  fi
+  status=$?
+  cat "$tmp" >&2
+  rm -f "$tmp"
+  return "$status"
+}
+
+run_substrate_visible() {
+  local bin
+  bin="$(substrate_bin)"
+  "$bin" "$@"
+}
+
+run_substrate_capture() {
+  local __out_var="$1"
+  shift
+  local bin tmp status captured
+  bin="$(substrate_bin)"
+  tmp="$(mktemp)"
+  if "$bin" "$@" >"$tmp" 2>&1; then
+    captured="$(cat "$tmp")"
+    printf -v "$__out_var" '%s' "$captured"
+    rm -f "$tmp"
+    return 0
+  else
+    status=$?
+    captured="$(cat "$tmp")"
+    printf -v "$__out_var" '%s' "$captured"
+    rm -f "$tmp"
+    return "$status"
+  fi
+}
+
+extract_version_token() {
+  sed -nE 's/.*([0-9]+[.][0-9]+[.][0-9]+([-+._A-Za-z0-9]*)?).*/\1/p' | head -n 1
+}
+
+version_core() {
+  local version="${1#v}"
+  version="${version%%[-+_]*}"
+  printf '%s\n' "$version"
+}
+
+version_at_least() {
+  local current minimum
+  current="$(version_core "$1")"
+  minimum="$(version_core "$2")"
+
+  local c_major=0 c_minor=0 c_patch=0 m_major=0 m_minor=0 m_patch=0
+  IFS=. read -r c_major c_minor c_patch <<<"$current"
+  IFS=. read -r m_major m_minor m_patch <<<"$minimum"
+  c_major="${c_major:-0}"; c_minor="${c_minor:-0}"; c_patch="${c_patch:-0}"
+  m_major="${m_major:-0}"; m_minor="${m_minor:-0}"; m_patch="${m_patch:-0}"
+
+  [ "$c_major" -gt "$m_major" ] && return 0
+  [ "$c_major" -lt "$m_major" ] && return 1
+  [ "$c_minor" -gt "$m_minor" ] && return 0
+  [ "$c_minor" -lt "$m_minor" ] && return 1
+  [ "$c_patch" -ge "$m_patch" ]
+}
+
+command_output_first_line() {
+  local cmd="$1"
+  shift
+  local out
+  if out="$("$cmd" "$@" 2>&1)"; then
+    printf '%s\n' "$out" | sed -n '/[^[:space:]]/ { s/^[[:space:]]*//; s/[[:space:]]*$//; p; q; }'
+    return 0
+  fi
+  return 1
+}
+
+supports_identity_with_memory() {
+  local bin="$1"
+  local out
+  out="$("$bin" identity --help 2>&1 || true)"
+  grep -q -- '--with-memory' <<<"$out"
+}
+
+aiplus_sync_disabled() {
+  case "${ASL_UPDATE_NO_AIPLUS_SYNC:-}" in
+    1|true|TRUE|True|yes|YES|Yes) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+update_dry_run_aiplus_sync() {
+  local install_dir="$1" support_path="$2" path_bin path_v support_v
+  if aiplus_sync_disabled; then
+    printf 'aiplus_sync=skipped reason=ASL_UPDATE_NO_AIPLUS_SYNC\n'
+    return 0
+  fi
+  path_bin="$(command -v aiplus 2>/dev/null || true)"
+  if [ -z "$path_bin" ]; then
+    printf 'would_create=%s/aiplus\n' "$install_dir"
+    return 0
+  fi
+  if ! aiplus_path_is_safe_to_overwrite "$path_bin"; then
+    printf 'aiplus_sync=skipped reason=unsafe_path path=%s\n' "$path_bin"
+    return 0
+  fi
+  path_v="$(command_output_first_line "$path_bin" --version 2>/dev/null | extract_version_token)"
+  support_v="$(command_output_first_line "$support_path" --version 2>/dev/null | extract_version_token)"
+  if [ -n "$path_v" ] && [ -n "$support_v" ]; then
+    if [ "$path_v" = "$support_v" ]; then
+      printf 'aiplus_sync=skipped reason=already_in_sync version=%s\n' "$path_v"
+      return 0
+    fi
+    if version_at_least "$path_v" "$support_v"; then
+      printf 'aiplus_sync=skipped reason=path_newer path=%s version=%s bundled_version=%s\n' \
+        "$path_bin" "$path_v" "$support_v"
+      return 0
+    fi
+  fi
+  printf 'would_sync=%s\n' "$path_bin"
+}
+
+update_sync_aiplus_path() {
+  local install_dir="$1" support_path="$2" path_bin path_v support_v
+  if aiplus_sync_disabled; then
+    printf 'aiplus_sync=skipped reason=ASL_UPDATE_NO_AIPLUS_SYNC\n'
+    return 0
+  fi
+  path_bin="$(command -v aiplus 2>/dev/null || true)"
+  if [ -z "$path_bin" ]; then
+    path_bin="$install_dir/aiplus"
+    install -m 755 "$support_path" "$path_bin"
+    printf 'aiplus_sync=created path=%s\n' "$path_bin"
+    return 0
+  fi
+  if ! aiplus_path_is_safe_to_overwrite "$path_bin"; then
+    printf 'aiplus_sync=skipped reason=unsafe_path path=%s\n' "$path_bin"
+    return 0
+  fi
+  path_v="$(command_output_first_line "$path_bin" --version 2>/dev/null | extract_version_token)"
+  support_v="$(command_output_first_line "$support_path" --version 2>/dev/null | extract_version_token)"
+  if [ -n "$path_v" ] && [ "$path_v" = "$support_v" ]; then
+    printf 'aiplus_sync=skipped reason=already_in_sync version=%s\n' "$path_v"
+    return 0
+  fi
+  if [ -n "$path_v" ] && [ -n "$support_v" ] && version_at_least "$path_v" "$support_v"; then
+    printf 'aiplus_sync=skipped reason=path_newer path=%s version=%s bundled_version=%s\n' \
+      "$path_bin" "$path_v" "$support_v"
+    return 0
+  fi
+  install -m 755 "$support_path" "$path_bin"
+  printf 'aiplus_sync=updated path=%s old=%s new=%s\n' "$path_bin" "${path_v:-unknown}" "${support_v:-unknown}"
+}
+
+update_cmd() {
+  local dry_run="0"
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --dry-run)
+        dry_run="1"
+        ;;
+      -h|--help)
+        printf 'Usage: asl update [--dry-run]\n'
+        return 0
+        ;;
+      *)
+        die "usage: asl update [--dry-run]"
+        ;;
+    esac
+    shift
+  done
+
+  local latest_version installed_version asset base_url target_install_dir target_libexec_dir
+  latest_version="$(latest_release_version)"
+  latest_version="$(normalize_version "$latest_version")"
+  installed_version="$(current_installed_version)"
+  installed_version="$(normalize_version "$installed_version")"
+  [ -n "$installed_version" ] || die "could not determine installed ASL version"
+  target_install_dir="$(install_dir)"
+  target_libexec_dir="$(libexec_dir)"
+
+  if [ "$installed_version" = "$latest_version" ]; then
+    printf 'ASL %s is already up-to-date\n' "$installed_version"
+    return 0
+  fi
+
+  asset="$(detect_asset_for_version "$latest_version")"
+  base_url="${ASL_BASE_URL:-https://github.com/$ASL_REPO/releases/download/v$latest_version}"
+
+  printf 'ASL %s → ASL %s\n' "$installed_version" "$latest_version"
+  printf 'download=%s/%s\n' "$base_url" "$asset"
+  printf 'install_dir=%s\n' "$target_install_dir"
+  printf 'libexec_dir=%s\n' "$target_libexec_dir"
+
+  if [ "$dry_run" = "1" ]; then
+    printf 'DRY_RUN=YES\n'
+    printf 'would_verify=%s/%s.sha256\n' "$base_url" "$asset"
+    printf 'would_replace=%s/asl\n' "$target_install_dir"
+    printf 'would_replace=%s/asl-support\n' "$target_libexec_dir"
+    update_dry_run_aiplus_sync "$target_install_dir" "$target_libexec_dir/asl-support"
+    return 0
+  fi
+
+  local tmp_dir
+  tmp_dir="$(mktemp -d)"
+  cleanup_update() {
+    rm -rf "$tmp_dir"
+    rm -f "$target_install_dir/asl.new" "$target_libexec_dir/asl-support.new"
+  }
+  trap cleanup_update EXIT INT TERM
+
+  fetch_url "$base_url/$asset.sha256" "$tmp_dir/$asset.sha256"
+  fetch_url "$base_url/$asset" "$tmp_dir/$asset"
+  verify_sha256 "$tmp_dir/$asset.sha256" "$tmp_dir/$asset"
+
+  mkdir -p "$tmp_dir/extract"
+  tar -xzf "$tmp_dir/$asset" -C "$tmp_dir/extract"
+
+  local new_ael new_support
+  new_ael="$(find "$tmp_dir/extract" -type f -path "*/bin/asl" | head -n 1)"
+  new_support="$(find "$tmp_dir/extract" -type f -path "*/libexec/asl-support" | head -n 1)"
+  [ -f "$new_ael" ] || die "release archive did not contain bin/asl"
+  [ -f "$new_support" ] || die "release archive did not contain libexec/asl-support"
+
+  mkdir -p "$target_install_dir" "$target_libexec_dir"
+  cp "$new_ael" "$target_install_dir/asl.new"
+  cp "$new_support" "$target_libexec_dir/asl-support.new"
+  chmod 755 "$target_install_dir/asl.new" "$target_libexec_dir/asl-support.new"
+  mv -f "$target_install_dir/asl.new" "$target_install_dir/asl"
+  mv -f "$target_libexec_dir/asl-support.new" "$target_libexec_dir/asl-support"
+
+  trap - EXIT INT TERM
+  rm -rf "$tmp_dir"
+
+  update_sync_aiplus_path "$target_install_dir" "$target_libexec_dir/asl-support" || true
+
+  printf 'UPDATE_STATUS=PASS\n'
+  printf 'installed=%s/asl\n' "$target_install_dir"
+}
+
+confirm_uninstall() {
+  local purge="$1"
+  printf 'Remove ASL from this machine'
+  if [ "$purge" = "1" ]; then
+    printf ' and purge this project .aiplus directory'
+  fi
+  printf '? [y/N] '
+  local answer=""
+  IFS= read -r answer || true
+  case "$answer" in
+    y|Y|yes|YES) return 0 ;;
+    *)
+      printf 'UNINSTALL_STATUS=CANCELLED\n'
+      return 1
+      ;;
+  esac
+}
+
+uninstall_cmd() {
+  local purge="0" yes="0"
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --purge)
+        purge="1"
+        ;;
+      --yes|-y)
+        yes="1"
+        ;;
+      -h|--help)
+        printf 'Usage: asl uninstall [--purge] [--yes]\n'
+        return 0
+        ;;
+      *)
+        die "usage: asl uninstall [--purge] [--yes]"
+        ;;
+    esac
+    shift
+  done
+
+  if [ "$yes" != "1" ]; then
+    confirm_uninstall "$purge"
+  fi
+
+  local removed=0 target_install_dir target_libexec_dir
+  target_install_dir="$(install_dir)"
+  target_libexec_dir="$(libexec_dir)"
+  printf 'ASL uninstall\n'
+  if [ -e "$target_install_dir/asl" ]; then
+    rm -f "$target_install_dir/asl"
+    printf 'removed=%s/asl\n' "$target_install_dir"
+    removed=1
+  else
+    printf 'not_found=%s/asl\n' "$target_install_dir"
+  fi
+  if [ -e "$target_libexec_dir/asl-support" ]; then
+    rm -f "$target_libexec_dir/asl-support"
+    printf 'removed=%s/asl-support\n' "$target_libexec_dir"
+    removed=1
+  else
+    printf 'not_found=%s/asl-support\n' "$target_libexec_dir"
+  fi
+  if [ "$purge" = "1" ] && [ -d "$PWD/.aiplus" ]; then
+    rm -rf "$PWD/.aiplus"
+    printf 'removed=%s/.aiplus\n' "$PWD"
+    removed=1
+  elif [ "$purge" = "1" ]; then
+    printf 'not_found=%s/.aiplus\n' "$PWD"
+  fi
+  if [ "$removed" = "0" ]; then
+    printf 'removed=none\n'
+  fi
+  if [ "$purge" != "1" ]; then
+    printf 'preserved=%s/.aiplus\n' "$PWD"
+  fi
+  printf 'UNINSTALL_STATUS=PASS\n'
+}
+
+print_onboarding_hint() {
+  [ "${ASL_NO_ONBOARDING:-}" != "1" ] || return 0
+  cat <<'EOF'
+Quick start (your team is ready):
+
+  asl                  open the lobby — pick who to talk to (PI / Advisor / …)
+  asl advisor          jump straight to Advisor for paper framing
+  asl pi               jump straight to PI for orchestration
+
+Tip: open two terminal windows for the Owner→Advisor + Owner→PI flow
+(one window per role).
+
+More: asl --help
+EOF
+}
+
+detect_runtime() {
+  if [ -n "${ASL_RUNTIME:-}" ]; then
+    printf '%s\n' "$ASL_RUNTIME"
+  elif command -v codex >/dev/null 2>&1; then
+    printf 'codex\n'
+  elif command -v claude >/dev/null 2>&1; then
+    printf 'claude-code\n'
+  elif command -v opencode >/dev/null 2>&1; then
+    printf 'opencode\n'
+  else
+    printf 'codex\n'
+  fi
+}
+
+runtime_from_manifest() {
+  python3 - <<'PY' 2>/dev/null || true
+import json
+from pathlib import Path
+
+path = Path(".aiplus/manifest.json")
+if not path.exists():
+    raise SystemExit(0)
+data = json.loads(path.read_text())
+adapters = data.get("runtimeAdapters") or []
+for preferred in ("codex", "claude-code", "opencode"):
+    if preferred in adapters:
+        print(preferred)
+        break
+PY
+}
+
+runtime_adapters_from_manifest() {
+  python3 - <<'PY' 2>/dev/null || true
+import json
+from pathlib import Path
+
+path = Path(".aiplus/manifest.json")
+if not path.exists():
+    raise SystemExit(0)
+data = json.loads(path.read_text())
+adapters = data.get("runtimeAdapters") or []
+seen = set()
+for adapter in adapters:
+    if adapter in {"codex", "claude-code", "opencode"} and adapter not in seen:
+        seen.add(adapter)
+        print(adapter)
+PY
+}
+
+project_has_runtime_manifest() {
+  local adapters
+  adapters="$(runtime_adapters_from_manifest)"
+  [ -n "$adapters" ]
+}
+
+project_has_ael_personas() {
+  local role
+  for role in pi advisor writer ra-stata ra-python theorist referee replicator pm; do
+    [ -f "$PWD/.aiplus/agents/personas/$role.md" ] || return 1
+  done
+}
+
+load_manifest_runtimes() {
+  ASL_LOBBY_RUNTIMES=()
+  local runtime
+  while IFS= read -r runtime; do
+    [ -n "$runtime" ] || continue
+    ASL_LOBBY_RUNTIMES+=("$runtime")
+  done < <(runtime_adapters_from_manifest)
+}
+
+print_no_runtime_found() {
+  cat >&2 <<'EOF'
+asl: no runtime found on PATH.
+
+Install at least one supported AI coding runtime, then run "asl" again:
+  Claude Code: https://claude.com/download
+  Codex:       https://developers.openai.com/codex
+  OpenCode:    https://opencode.ai
+EOF
+}
+
+auto_install_available_runtimes() {
+  ASL_LOBBY_RUNTIMES=()
+  local runtime bin
+  for runtime in codex claude-code opencode; do
+    bin="$(runtime_binary "$runtime")"
+    if ! command -v "$bin" >/dev/null 2>&1; then
+      continue
+    fi
+    if ! install_runtime_flow "$runtime"; then
+      printf 'asl: auto-install failed for %s at %s: %s\n' \
+        "$runtime" "$ASL_INSTALL_FAILURE_STEP" "$ASL_INSTALL_FAILURE_REASON" >&2
+      return 1
+    fi
+    ASL_LOBBY_RUNTIMES+=("$runtime")
+  done
+
+  if [ "${#ASL_LOBBY_RUNTIMES[@]}" -eq 0 ]; then
+    print_no_runtime_found
+    return 1
+  fi
+
+  printf 'ASL set up for: '
+  join_install_summary "${ASL_LOBBY_RUNTIMES[@]}"
+  printf '\n'
+}
+
+ensure_project_ready_for_lobby() {
+  if project_has_runtime_manifest && project_has_ael_personas; then
+    load_manifest_runtimes
+    return 0
+  fi
+  auto_install_available_runtimes
+}
+
+install_failure_reason() {
+  local output="$1" first_line
+  if grep -Eiq 'not on PATH|command not found|not found|No such file|missing .*CLI|CLI .*missing' <<<"$output"; then
+    printf 'CLI not on PATH'
+    return 0
+  fi
+
+  first_line="$(printf '%s\n' "$output" | sed -n '/[^[:space:]]/ { s/^[[:space:]]*//; s/[[:space:]]*$//; p; q; }')"
+  if [ -n "$first_line" ]; then
+    printf '%s' "$first_line" | cut -c 1-120
+  else
+    printf 'failed'
+  fi
+}
+
+join_install_summary() {
+  local first="1" item
+  for item in "$@"; do
+    if [ "$first" = "1" ]; then
+      first="0"
+    else
+      printf ', '
+    fi
+    printf '%s' "$item"
+  done
+}
+
+print_install_dry_run_for_runtime() {
+  local runtime="$1"
+  printf '  runtime=%s\n' "$runtime"
+  printf '    would bootstrap the project runtime adapter\n'
+  printf '    would install the AgentScienceLab research team\n'
+  printf '    would set AgentScienceLab as the active team\n'
+  printf '    would register the MCP server with %s (native tool-use for chat)\n' "$runtime"
+}
+
+install_runtime_flow() {
+  local runtime="$1"
+  shift
+  local output step
+  ASL_INSTALL_FAILURE_REASON=""
+  ASL_INSTALL_FAILURE_STEP=""
+
+  step="install"
+  if ! run_substrate_capture output install "$runtime" --allow-version-skew "$@"; then
+    ASL_INSTALL_FAILURE_STEP="$step"
+    ASL_INSTALL_FAILURE_REASON="$(install_failure_reason "$output")"
+    return 1
+  fi
+
+  step="add"
+  if ! run_substrate_capture output add agentsciencelab; then
+    ASL_INSTALL_FAILURE_STEP="$step"
+    ASL_INSTALL_FAILURE_REASON="$(install_failure_reason "$output")"
+    return 1
+  fi
+
+  step="set-team"
+  if ! run_substrate_capture output agent set-team agentsciencelab; then
+    ASL_INSTALL_FAILURE_STEP="$step"
+    ASL_INSTALL_FAILURE_REASON="$(install_failure_reason "$output")"
+    return 1
+  fi
+
+  step="mcp-register"
+  if ! run_substrate_capture output mcp-register --runtime "$runtime"; then
+    ASL_INSTALL_FAILURE_STEP="$step"
+    ASL_INSTALL_FAILURE_REASON="$(install_failure_reason "$output")"
+    return 1
+  fi
+}
+
+install_cmd() {
+  local runtime="" dry_run="0"
+  local -a args=()
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      codex|claude-code|opencode|all)
+        if [ -z "$runtime" ]; then
+          runtime="$1"
+        else
+          args+=("$1")
+        fi
+        shift
+        ;;
+      --runtime)
+        [ "$#" -ge 2 ] || die "--runtime requires a value"
+        runtime="$2"
+        shift 2
+        ;;
+      --runtime=*)
+        runtime="${1#--runtime=}"
+        shift
+        ;;
+      --dry-run)
+        dry_run="1"
+        args+=("$1")
+        shift
+        ;;
+      *)
+        args+=("$1")
+        shift
+        ;;
+    esac
+  done
+
+  if [ -z "$runtime" ]; then
+    runtime="$(detect_runtime)"
+  fi
+
+  if [ "$dry_run" = "1" ]; then
+    printf 'ASL install dry-run\n'
+    if [ "$runtime" = "all" ]; then
+      local dry_runtime
+      for dry_runtime in codex claude-code opencode; do
+        print_install_dry_run_for_runtime "$dry_runtime"
+      done
+    else
+      print_install_dry_run_for_runtime "$runtime"
+    fi
+    printf 'ASL_DRY_RUN=PASS\n'
+    return 0
+  fi
+
+  if [ "$runtime" = "all" ]; then
+    local install_runtime failures=0 install_success
+    local -a summary=()
+    for install_runtime in codex claude-code opencode; do
+      if [ "${#args[@]}" -gt 0 ]; then
+        if install_runtime_flow "$install_runtime" "${args[@]}"; then
+          install_success="1"
+        else
+          install_success="0"
+        fi
+      else
+        if install_runtime_flow "$install_runtime"; then
+          install_success="1"
+        else
+          install_success="0"
+        fi
+      fi
+      if [ "$install_success" = "1" ]; then
+        printf 'ASL install runtime=%s status=PASS\n' "$install_runtime"
+        summary+=("$install_runtime ✓")
+      else
+        failures=$((failures + 1))
+        printf 'ASL install runtime=%s status=FAIL step=%s reason=%s\n' \
+          "$install_runtime" "$ASL_INSTALL_FAILURE_STEP" "$ASL_INSTALL_FAILURE_REASON" >&2
+        summary+=("$install_runtime ✗ ($ASL_INSTALL_FAILURE_REASON)")
+      fi
+    done
+    printf 'ASL installed: '
+    join_install_summary "${summary[@]}"
+    printf '\n'
+    if [ "$failures" -eq 0 ]; then
+      printf 'Next: asl                  # chat with your team in plain English / Chinese\n'
+      print_onboarding_hint
+      return 0
+    fi
+    return 1
+  fi
+
+  if [ "${#args[@]}" -gt 0 ]; then
+    run_substrate_quiet install "$runtime" --allow-version-skew "${args[@]}"
+  else
+    run_substrate_quiet install "$runtime" --allow-version-skew
+  fi
+  run_substrate_quiet add agentsciencelab
+  run_substrate_quiet agent set-team agentsciencelab
+  # Register the MCP server so PI inside chat can call agent_route /
+  # agent_status / agent_set_team as native tool-use instead of emitting
+  # bash blocks the user has to click. Fail-soft: if MCP registration
+  # doesn't take (e.g. corrupted runtime config, runtime not supported on
+  # this platform), chat still works via the bash-block fallback.
+  if run_substrate_quiet mcp-register --runtime "$runtime"; then
+    printf 'ASL installed for runtime=%s (chat tools registered)\n' "$runtime"
+  else
+    printf 'ASL installed for runtime=%s (chat tools not registered; bash-block fallback active)\n' "$runtime" >&2
+  fi
+  printf 'Next: asl                  # chat with your team in plain English / Chinese\n'
+  print_onboarding_hint
+}
+
+runtime_binary() {
+  case "$1" in
+    codex) printf 'codex\n' ;;
+    claude-code) printf 'claude\n' ;;
+    opencode) printf 'opencode\n' ;;
+    *) die "unknown runtime: $1" ;;
+  esac
+}
+
+aiplus_path_is_safe_to_overwrite() {
+  local path="$1"
+  [ "$(basename "$path")" = "aiplus" ] || return 1
+  case "$path" in
+    *dev*|*target/*)
+      return 1
+      ;;
+  esac
+  return 0
+}
+
+confirm_aiplus_fix() {
+  local support_path="$1" path_bin="$2"
+  printf 'asl doctor --fix would write to %s from %s. Proceed? [y/N] ' "$path_bin" "$support_path"
+  local answer=""
+  IFS= read -r answer || true
+  case "$answer" in
+    y|Y|yes|YES) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+doctor_aiplus_path_check() {
+  local fix="$1" yes="$2"
+
+  case "${OS:-$(uname -s 2>/dev/null || printf unknown)}" in
+    Windows_NT|MINGW*|MSYS*|CYGWIN*)
+      return 0
+      ;;
+  esac
+
+  if [ ! -f "$PWD/.aiplus/AGENTS.aiplus.md" ]; then
+    printf 'WARNING AGENTS.aiplus.md missing (run asl install to regenerate project agent instructions)\n'
+  fi
+
+  local support_path path_bin path_version_raw support_version_raw path_version support_version needs_fix=0 missing_flag=0
+  support_path="$(substrate_bin)"
+  path_bin="$(command -v aiplus 2>/dev/null || true)"
+  if [ -z "$path_bin" ]; then
+    printf 'NEEDS_FIX aiplus_path_missing bundled_path=%s\n' "$support_path"
+    return 1
+  fi
+
+  path_version_raw="$(command_output_first_line "$path_bin" --version || printf 'unknown')"
+  support_version_raw="$(command_output_first_line "$support_path" --version || printf 'unknown')"
+  path_version="$(printf '%s\n' "$path_version_raw" | extract_version_token)"
+  support_version="$(printf '%s\n' "$support_version_raw" | extract_version_token)"
+  [ -n "$path_version" ] || path_version="$path_version_raw"
+  [ -n "$support_version" ] || support_version="$support_version_raw"
+
+  if [ "$path_version" != "$support_version" ] && \
+     ! { [ -n "$path_version" ] && [ -n "$support_version" ] && version_at_least "$path_version" "$support_version"; }; then
+    printf 'NEEDS_FIX aiplus_version_mismatch path=%s version=%s bundled_path=%s bundled_version=%s\n' \
+      "$path_bin" "$path_version" "$support_path" "$support_version"
+    needs_fix=1
+  fi
+
+  if ! supports_identity_with_memory "$path_bin"; then
+    printf 'NEEDS_FIX aiplus_identity_flag_missing path=%s\n' "$path_bin"
+    needs_fix=1
+    missing_flag=1
+  fi
+
+  [ "$needs_fix" = "1" ] || return 0
+  [ "$fix" = "1" ] || return 1
+
+  if ! aiplus_path_is_safe_to_overwrite "$path_bin"; then
+    printf 'FIX_BLOCKED aiplus_path_unsafe path=%s\n' "$path_bin" >&2
+    return 1
+  fi
+
+  if [ "$yes" != "1" ] && ! confirm_aiplus_fix "$support_path" "$path_bin"; then
+    printf 'PRINT_HINT aiplus_version_mismatch would_write=%s rerun_with="asl doctor --fix --yes"\n' "$path_bin"
+    return 1
+  fi
+
+  if ! install -m 755 "$support_path" "$path_bin"; then
+    printf 'FIX_STATUS=FAIL aiplus_version_mismatch path=%s manual_command=%s\n' "$path_bin" "install -m 755 $support_path $path_bin" >&2
+    return 1
+  fi
+
+  path_version_raw="$(command_output_first_line "$path_bin" --version || printf 'unknown')"
+  path_version="$(printf '%s\n' "$path_version_raw" | extract_version_token)"
+  [ -n "$path_version" ] || path_version="$path_version_raw"
+  if [ "$path_version" != "$support_version" ]; then
+    printf 'FIX_STATUS=FAIL aiplus_version_mismatch path=%s version=%s bundled_version=%s\n' \
+      "$path_bin" "$path_version" "$support_version" >&2
+    return 1
+  fi
+  if ! supports_identity_with_memory "$path_bin"; then
+    printf 'FIX_STATUS=FAIL aiplus_identity_flag_missing path=%s\n' "$path_bin" >&2
+    return 1
+  fi
+
+  if [ "$missing_flag" = "1" ]; then
+    printf 'FIX_STATUS=PASS aiplus_identity_flag_missing path=%s\n' "$path_bin"
+  fi
+  printf 'FIX_STATUS=PASS aiplus_version_mismatch path=%s version=%s\n' "$path_bin" "$path_version"
+  return 0
+}
+
+project_has_agentsciencelab() {
+  [ -d "$PWD/.aiplus/modules/agentsciencelab" ] && return 0
+  [ -f "$PWD/.aiplus/manifest.json" ] && grep -q '"agentsciencelab"' "$PWD/.aiplus/manifest.json" && return 0
+  [ -f "$PWD/.aiplus/team.toml" ] && grep -Eq '^[[:space:]]*(active_team|team)[[:space:]]*=[[:space:]]*"?agentsciencelab"?' "$PWD/.aiplus/team.toml" && return 0
+  return 1
+}
+
+doctor_ael_consultant_team_check() {
+  project_has_agentsciencelab || return 0
+
+  local consultant="$PWD/.aiplus/consultant-team.toml"
+  [ -f "$consultant" ] || return 0
+
+  local missing=0 needle
+  for needle in \
+    'id = "design"' \
+    'id = "contribution"' \
+    'id = "reproducibility"' \
+    'id = "irb"' \
+    'id = "ai_integration"' \
+    'id = "top_tier_referee"' \
+    'id = "jmp_audience"' \
+    'id = "external_replicator"' \
+    'id = "submission"' \
+    'id = "working-paper-post"' \
+    'id = "referee-response-send"' \
+    'id = "data-share"' \
+    'id = "authorship-change"'; do
+    if ! grep -Fq "$needle" "$consultant"; then
+      missing=1
+    fi
+  done
+  if ! grep -Eq 'light[.]review_mode[[:space:]]*=[[:space:]]*"skip"' "$consultant"; then
+    missing=1
+  fi
+  if grep -Eq 'id = "(product_market|ux_plain_english|trust_safety|implementation_qa|runtime_qa|strategic_critic)"' "$consultant"; then
+    missing=1
+  fi
+
+  if [ "$missing" = "1" ]; then
+    printf 'NEEDS_FIX ael_consultant_team_mismatch expected=agentsciencelab_research_config path=.aiplus/consultant-team.toml fix="asl install"\n'
+    return 1
+  fi
+  printf 'PASS ael_consultant_team_research_config path=.aiplus/consultant-team.toml\n'
+}
+
+doctor_cmd() {
+  local fix="0" yes="0" status=0
+  local -a substrate_args=()
+
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --fix)
+        fix="1"
+        substrate_args+=("$1")
+        shift
+        ;;
+      --yes|-y)
+        yes="1"
+        shift
+        ;;
+      *)
+        substrate_args+=("$1")
+        shift
+        ;;
+    esac
+  done
+
+  if [ "${#substrate_args[@]}" -gt 0 ]; then
+    run_substrate_visible doctor "${substrate_args[@]}" || status=$?
+  else
+    run_substrate_visible doctor || status=$?
+  fi
+  doctor_ael_consultant_team_check || status=$?
+  doctor_aiplus_path_check "$fix" "$yes" || status=$?
+  return "$status"
+}
+
+warn_if_stale_team_config() {
+  local team_file="$PWD/.aiplus/team.toml" active_team=""
+  [ -f "$team_file" ] || return 0
+
+  active_team="$(sed -nE 's/^[[:space:]]*(active_team|team)[[:space:]]*=[[:space:]]*"?([^"#[:space:]]+)"?.*/\2/p' "$team_file" | head -n 1)"
+  [ -z "$active_team" ] || [ "$active_team" = "agentsciencelab" ] && return 0
+
+  cat >&2 <<EOF
+WARNING: this project's .aiplus/team.toml is set to team=$active_team, not agentsciencelab.
+         aiplus lobby will not use ASL personas correctly.
+         Run \`asl install\` to repair, or edit .aiplus/team.toml manually.
+EOF
+}
+
+require_delegate_aiplus() {
+  command -v aiplus >/dev/null 2>&1 || die "aiplus not on PATH. Run \`asl install\` to set it up."
+
+  local raw_version parsed_version
+  raw_version="$(aiplus --version 2>/dev/null | sed -n '/[^[:space:]]/ { p; q; }' || true)"
+  parsed_version="$(printf '%s\n' "$raw_version" | extract_version_token)"
+  [ -n "$parsed_version" ] || die "could not determine aiplus version. Run \`asl update\`."
+  version_at_least "$parsed_version" "0.6.19" || \
+    die "ASL v0.3.0 requires aiplus v0.6.19+; found $parsed_version. Run \`asl update\`."
+}
+
+role_talk_delegate_args() {
+  local role="$1"
+  shift
+  local fresh="0" arg
+  ROLE_TALK_ARGS=()
+  for arg in "$@"; do
+    if [ "$arg" = "--fresh" ]; then
+      fresh="1"
+    else
+      ROLE_TALK_ARGS+=("$arg")
+    fi
+  done
+  if [ "$fresh" = "1" ]; then
+    ROLE_TALK_ARGS=(agent talk "$role" "${ROLE_TALK_ARGS[@]+"${ROLE_TALK_ARGS[@]}"}")
+  else
+    ROLE_TALK_ARGS=(agent talk --resume "$role" "${ROLE_TALK_ARGS[@]+"${ROLE_TALK_ARGS[@]}"}")
+  fi
+}
+
+ael_unknown_command_error() {
+  printf 'asl: unknown command or multi-word natural-language input: %s\n' "$*" >&2
+  printf 'asl: use `asl "..."` for freeform requests, or `asl talk ...` for explicit chat.\n' >&2
+  exit 1
+}
+
+ael_chat_args_error() {
+  printf 'asl: `asl chat` does not accept arguments.\n' >&2
+  printf 'asl: use `asl` for the lobby, or `asl "..."` for natural-language routing.\n' >&2
+  exit 1
+}
+
+exec_aiplus_delegate() {
+  case "${1:-}" in
+    ""|pi|advisor|writer|ra-stata|ra-python|theorist|referee|replicator|pm|talk|route|invite|dismiss|integrate|substrate)
+      ;;
+    chat)
+      [ "$#" -eq 1 ] || ael_chat_args_error
+      ;;
+    *)
+      if [ "$#" -eq 1 ] && [[ "${1:-}" != -* ]]; then
+        :
+      else
+        ael_unknown_command_error "$@"
+      fi
+      ;;
+  esac
+
+  require_delegate_aiplus
+  ensure_project_ready_for_lobby
+  warn_if_stale_team_config
+
+  local -a delegate_args=()
+  case "${1:-}" in
+    "")
+      delegate_args=()
+      ;;
+    chat)
+      shift
+      delegate_args=()
+      ;;
+    pi|advisor|writer|ra-stata|ra-python|theorist|referee|replicator|pm)
+      local role="$1"
+      shift
+      role_talk_delegate_args "$role" "$@"
+      delegate_args=("${ROLE_TALK_ARGS[@]}")
+      ;;
+    talk)
+      shift
+      delegate_args=(agent talk "$@")
+      ;;
+    route)
+      shift
+      delegate_args=(agent route "$@")
+      ;;
+    invite|dismiss|integrate)
+      local subcommand="$1"
+      shift
+      delegate_args=(agent "$subcommand" "$@")
+      ;;
+    substrate)
+      shift
+      delegate_args=("$@")
+      ;;
+    *)
+      if [ "$#" -eq 1 ] && [[ "${1:-}" != -* ]]; then
+        delegate_args=(agent talk "$1")
+      else
+        ael_unknown_command_error "$@"
+      fi
+      ;;
+  esac
+
+  exec aiplus "${delegate_args[@]+"${delegate_args[@]}"}"
+}
+
+main() {
+  local cmd="${1:-}"
+  case "$cmd" in
+    -h|--help|help)
+      usage
+      ;;
+    -V|--version|version)
+      printf 'ASL %s (aiplus 0.6.19+)\n' "$ASL_VERSION"
+      ;;
+    install)
+      shift
+      install_cmd "$@"
+      ;;
+    status)
+      shift
+      run_substrate_visible agent status "$@"
+      ;;
+    refresh)
+      shift
+      run_substrate_visible refresh "$@"
+      ;;
+    doctor)
+      shift
+      doctor_cmd "$@"
+      ;;
+    update)
+      shift
+      update_cmd "$@"
+      ;;
+    uninstall)
+      shift
+      uninstall_cmd "$@"
+      ;;
+    telemetry)
+      shift
+      die "asl telemetry has been removed"
+      ;;
+    *)
+      exec_aiplus_delegate "$@"
+      ;;
+  esac
+}
+
+main "$@"

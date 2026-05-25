@@ -25,3 +25,9 @@ CLAUDE.md
 .aiplus/*
 !.aiplus/
 !.aiplus/consultant-team.toml
+
+dist/
+
+*.tar.gz
+
+vendor/aiplus/
