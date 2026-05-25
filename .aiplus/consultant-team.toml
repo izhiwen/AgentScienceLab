@@ -41,7 +41,7 @@ l4_max_total = 13
 l5_min_total = 14
 
 [[members]]
-id = "research_lead"
+id = "research-lead"
 name = "Research Lead / PI"
 default_tiers = ["LIGHT", "MEDIUM", "HEAVY"]
 responsibilities = [
@@ -67,7 +67,7 @@ can_edit_files = false
 can_trigger_owner_gate = false
 
 [[members]]
-id = "experiment_designer"
+id = "experiment-designer"
 name = "Experiment Designer"
 default_tiers = ["LIGHT", "MEDIUM", "HEAVY"]
 responsibilities = [
@@ -80,7 +80,7 @@ can_edit_files = false
 can_trigger_owner_gate = false
 
 [[members]]
-id = "benchmark_engineer"
+id = "benchmark-engineer"
 name = "Benchmark Engineer"
 default_tiers = ["MEDIUM", "HEAVY"]
 responsibilities = [
@@ -93,7 +93,7 @@ can_edit_files = false
 can_trigger_owner_gate = false
 
 [[members]]
-id = "evaluation_scientist"
+id = "evaluation-scientist"
 name = "Evaluation Scientist"
 default_tiers = ["LIGHT", "MEDIUM", "HEAVY"]
 responsibilities = [
@@ -106,7 +106,7 @@ can_edit_files = false
 can_trigger_owner_gate = false
 
 [[members]]
-id = "agent_systems_engineer"
+id = "agent-systems-engineer"
 name = "Agent Systems Engineer"
 default_tiers = ["LIGHT", "MEDIUM", "HEAVY"]
 responsibilities = [
@@ -119,7 +119,7 @@ can_edit_files = false
 can_trigger_owner_gate = false
 
 [[members]]
-id = "reproducibility_engineer"
+id = "reproducibility-engineer"
 name = "Reproducibility Engineer"
 default_tiers = ["MEDIUM", "HEAVY"]
 responsibilities = [
@@ -132,7 +132,7 @@ can_edit_files = false
 can_trigger_owner_gate = false
 
 [[members]]
-id = "literature_reviewer"
+id = "literature-reviewer"
 name = "Literature Reviewer"
 default_tiers = ["LIGHT", "MEDIUM", "HEAVY"]
 responsibilities = [
@@ -158,7 +158,7 @@ can_edit_files = false
 can_trigger_owner_gate = false
 
 [[members]]
-id = "paper_writer"
+id = "paper-writer"
 name = "Paper Writer"
 default_tiers = ["LIGHT", "MEDIUM", "HEAVY"]
 responsibilities = [
@@ -174,49 +174,49 @@ can_trigger_owner_gate = false
 id = "experiment_design"
 patterns = ["experiment design", "hypothesis", "baseline", "ablation", "control", "study design"]
 tier = "MEDIUM"
-members = ["experiment_designer", "evaluation_scientist", "research_lead"]
+members = ["experiment-designer", "evaluation-scientist", "research-lead"]
 
 [[triggers]]
 id = "benchmark_feasibility"
 patterns = ["benchmark feasibility", "benchmark task", "harness constraint", "dataset handling", "evaluation environment"]
 tier = "MEDIUM"
-members = ["benchmark_engineer", "evaluation_scientist", "reproducibility_engineer"]
+members = ["benchmark-engineer", "evaluation-scientist", "reproducibility-engineer"]
 
 [[triggers]]
 id = "evaluation_audit"
 patterns = ["evaluation audit", "metric validity", "statistical interpretation", "evidence quality", "alternative explanation", "result claim"]
 tier = "MEDIUM"
-members = ["evaluation_scientist", "referee", "paper_writer"]
+members = ["evaluation-scientist", "referee", "paper-writer"]
 
 [[triggers]]
 id = "reproducibility"
 patterns = ["reproducibility", "rerun", "seed", "prompt inventory", "artifact checklist", "environment documentation"]
 tier = "HEAVY"
-members = ["reproducibility_engineer", "benchmark_engineer", "paper_writer"]
+members = ["reproducibility-engineer", "benchmark-engineer", "paper-writer"]
 
 [[triggers]]
 id = "literature_positioning"
 patterns = ["literature positioning", "related work", "prior art", "novelty", "field context", "contribution boundary"]
 tier = "MEDIUM"
-members = ["literature_reviewer", "advisor", "referee"]
+members = ["literature-reviewer", "advisor", "referee"]
 
 [[triggers]]
 id = "referee_critique"
 patterns = ["referee critique", "reviewer objection", "weak claim", "missing baseline", "unsupported conclusion", "adversarial review"]
 tier = "HEAVY"
-members = ["referee", "evaluation_scientist", "research_lead"]
+members = ["referee", "evaluation-scientist", "research-lead"]
 
 [[triggers]]
 id = "paper_writing"
 patterns = ["paper writing", "abstract", "manuscript", "limitations", "rebuttal", "camera ready"]
 tier = "MEDIUM"
-members = ["paper_writer", "literature_reviewer", "evaluation_scientist"]
+members = ["paper-writer", "literature-reviewer", "evaluation-scientist"]
 
 [[triggers]]
 id = "substrate_alignment"
 patterns = ["substrate alignment", "AiPlus divergence", "routing", "memory", "dispatch", "locks", "worktrees", "MCP", "runtime launch", "safety", "secret handling", "refresh"]
 tier = "HEAVY"
-members = ["advisor", "agent_systems_engineer", "referee"]
+members = ["advisor", "agent-systems-engineer", "referee"]
 
 [[triggers]]
 id = "simple_advice"

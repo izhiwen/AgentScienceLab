@@ -6,18 +6,18 @@ Aliases are documentation-level v0.1 labels unless and until runtime role config
 
 ## Alias Table
 
-| Canonical role | Documentation aliases |
-| --- | --- |
-| Research Lead / PI | Research Lead, PI, Principal Investigator, Study Lead, Research Owner |
-| Advisor | Advisor, Strategic Advisor, Field Advisor, Research Strategy Reviewer |
-| Experiment Designer | Experiment Designer, Study Designer, Experimental Design Reviewer, Hypothesis Planner |
-| Benchmark Engineer | Benchmark Engineer, Benchmark Feasibility Reviewer, Evaluation Environment Reviewer, Harness Feasibility Reviewer |
-| Evaluation Scientist | Evaluation Scientist, Metrics Reviewer, Evidence Reviewer, Statistical Evaluation Reviewer |
-| Agent Systems Engineer | Agent Systems Engineer, Agent Architecture Reviewer, Tool-Use Reviewer, Memory/Planning Reviewer |
-| Reproducibility Engineer | Reproducibility Engineer, Artifact Reviewer, Rerun Reviewer, Reproduction Checklist Reviewer |
-| Literature Reviewer | Literature Reviewer, Related Work Reviewer, Prior-Art Reviewer, Positioning Reviewer |
-| Referee / Critic | Referee, Critic, Skeptical Reviewer, Reviewer 2, Adversarial Reviewer |
-| Paper Writer | Paper Writer, Manuscript Writer, Drafting Reviewer, Rebuttal Writer |
+| Canonical role | Canonical ID | Documentation aliases |
+| --- | --- | --- |
+| Research Lead / PI | research-lead | Research Lead, PI, Principal Investigator, Study Lead, Research Owner |
+| Advisor | advisor | Advisor, Strategic Advisor, Field Advisor, Research Strategy Reviewer |
+| Experiment Designer | experiment-designer | Experiment Designer, Study Designer, Experimental Design Reviewer, Hypothesis Planner |
+| Benchmark Engineer | benchmark-engineer | Benchmark Engineer, Benchmark Feasibility Reviewer, Evaluation Environment Reviewer, Harness Feasibility Reviewer |
+| Evaluation Scientist | evaluation-scientist | Evaluation Scientist, Metrics Reviewer, Evidence Reviewer, Statistical Evaluation Reviewer |
+| Agent Systems Engineer | agent-systems-engineer | Agent Systems Engineer, Agent Architecture Reviewer, Tool-Use Reviewer, Memory/Planning Reviewer |
+| Reproducibility Engineer | reproducibility-engineer | Reproducibility Engineer, Artifact Reviewer, Rerun Reviewer, Reproduction Checklist Reviewer |
+| Literature Reviewer | literature-reviewer | Literature Reviewer, Related Work Reviewer, Prior-Art Reviewer, Positioning Reviewer |
+| Referee / Critic | referee | Referee, Critic, Skeptical Reviewer, Reviewer 2, Adversarial Reviewer |
+| Paper Writer | paper-writer | Paper Writer, Manuscript Writer, Drafting Reviewer, Rebuttal Writer |
 
 ## Boundary
 
