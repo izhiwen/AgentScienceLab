@@ -2,6 +2,10 @@
 
 AgentScienceLab v0.1 defines research-facing roles. These roles describe responsibility boundaries for a virtual research team; they do not add new substrate behavior.
 
+## Naming Convention
+
+Display headings may include alternative terms separated by `/` for human readability, such as `Research Lead / PI` and `Referee / Critic`. Canonical IDs use a single kebab-case form chosen for alignment with the AiPlus module onboarding proposal. The canonical ID is the source of truth for role configuration, runtime adapter filenames, and cross-repo coordination; display headings are documentation conveniences only.
+
 ## Research Lead / PI
 
 > Canonical ID: pi
