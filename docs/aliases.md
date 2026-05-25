@@ -8,7 +8,7 @@ Aliases are documentation-level v0.1 labels unless and until runtime role config
 
 | Canonical role | Canonical ID | Documentation aliases |
 | --- | --- | --- |
-| Research Lead / PI | research-lead | Research Lead, PI, Principal Investigator, Study Lead, Research Owner |
+| Research Lead / PI | pi | Research Lead, PI, Principal Investigator, Study Lead, Research Owner |
 | Advisor | advisor | Advisor, Strategic Advisor, Field Advisor, Research Strategy Reviewer |
 | Experiment Designer | experiment-designer | Experiment Designer, Study Designer, Experimental Design Reviewer, Hypothesis Planner |
 | Benchmark Engineer | benchmark-engineer | Benchmark Engineer, Benchmark Feasibility Reviewer, Evaluation Environment Reviewer, Harness Feasibility Reviewer |

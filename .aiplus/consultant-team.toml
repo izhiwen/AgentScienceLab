@@ -41,7 +41,7 @@ l4_max_total = 13
 l5_min_total = 14
 
 [[members]]
-id = "research-lead"
+id = "pi"
 name = "Research Lead / PI"
 default_tiers = ["LIGHT", "MEDIUM", "HEAVY"]
 responsibilities = [
@@ -174,7 +174,7 @@ can_trigger_owner_gate = false
 id = "experiment_design"
 patterns = ["experiment design", "hypothesis", "baseline", "ablation", "control", "study design"]
 tier = "MEDIUM"
-members = ["experiment-designer", "evaluation-scientist", "research-lead"]
+members = ["experiment-designer", "evaluation-scientist", "pi"]
 
 [[triggers]]
 id = "benchmark_feasibility"
@@ -204,7 +204,7 @@ members = ["literature-reviewer", "advisor", "referee"]
 id = "referee_critique"
 patterns = ["referee critique", "reviewer objection", "weak claim", "missing baseline", "unsupported conclusion", "adversarial review"]
 tier = "HEAVY"
-members = ["referee", "evaluation-scientist", "research-lead"]
+members = ["referee", "evaluation-scientist", "pi"]
 
 [[triggers]]
 id = "paper_writing"

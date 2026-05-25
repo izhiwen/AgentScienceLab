@@ -4,7 +4,7 @@ AgentScienceLab v0.1 defines research-facing roles. These roles describe respons
 
 ## Research Lead / PI
 
-> Canonical ID: research-lead
+> Canonical ID: pi
 
 - Owns: research direction, claim discipline, final scope, risk tradeoffs, and publication intent.
 - Does not own: implementation details, benchmark harness mechanics, line-level reproducibility checks, or final referee independence.
