@@ -4,7 +4,7 @@ schema_version = "1.0"
 role = "reproducibility-engineer"
 display_name = "Reproducibility Engineer"
 tier = "internal_core"
-default_specialty = "TODO Stage 2b"
+default_specialty = "artifact-rerun-readiness"
 warm_bench_ttl_seconds = 1800
 
 [persona]
@@ -24,5 +24,5 @@ read_project_memory = true
 write_team_memory = false
 
 [invocation]
-chinese_aliases = ["TODO Stage 2b"]
-english_aliases = ["reproducibility-engineer", "TODO Stage 2b"]
+chinese_aliases = ["可复现性", "复现工程", "artifact审查", "重跑检查"]
+english_aliases = ["reproducibility-engineer", "reproducibility", "artifact-audit", "rerun-check", "repro-check"]
