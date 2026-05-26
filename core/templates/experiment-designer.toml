@@ -4,7 +4,7 @@ schema_version = "1.0"
 role = "experiment-designer"
 display_name = "Experiment Designer"
 tier = "internal_core"
-default_specialty = "TODO Stage 2b"
+default_specialty = "experiment-design"
 warm_bench_ttl_seconds = 1800
 
 [persona]
@@ -24,5 +24,5 @@ read_project_memory = true
 write_team_memory = false
 
 [invocation]
-chinese_aliases = ["TODO Stage 2b"]
-english_aliases = ["experiment-designer", "TODO Stage 2b"]
+chinese_aliases = ["实验设计", "实验设计师", "研究设计"]
+english_aliases = ["experiment-designer", "experiment-design", "study-design", "design-review", "ablation-plan"]
