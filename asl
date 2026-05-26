@@ -34,7 +34,7 @@ fi
 
 usage() {
   cat <<'EOF'
-ASL 0.3.0
+ASL 0.1.0
 
 Usage:
   asl install [codex|claude-code|opencode|all]   set up the research team here (once per project)
@@ -47,15 +47,16 @@ Usage:
   asl doctor [--fix] [--yes]                     self-check and fix common drift
 
 Roles you can chat with directly:
-  asl pi                                         项目经理 — 派单、跟进、汇总
-  asl advisor                                    顾问 — 反思、识别策略、框架
-  asl writer                                     写手 — 起草段落、引言、改稿
-  asl ra-stata                                   实证 RA — 回归、表格、Stata
-  asl ra-python                                  数据 RA — 清洗、合并、Python
-  asl theorist                                   理论 — 识别假设、模型
-  asl referee                                    内审 — 内部自审
-  asl replicator                                 复现 — clean-room 复跑
-  asl pm                                         项目管理 — Gantt、deadline
+  asl pi                                         研究负责人 — 方向、claim 强度、scope 决策
+  asl advisor                                    顾问 — 反思、定位、风险
+  asl experiment-designer                        实验设计师 — 假设、对照、消融、指标
+  asl benchmark-engineer                         基准工程师 — harness、数据集、log 暴露
+  asl evaluation-scientist                       评估科学家 — 指标、统计、证据强度
+  asl agent-systems-engineer                     系统工程师 — 工具调用、记忆、规划、trace
+  asl reproducibility-engineer                   复现工程师 — seed、prompt、环境、artifact
+  asl literature-reviewer                        文献综述员 — 邻接工作、prior art、定位
+  asl referee                                    审稿人 — 找漏洞、缺基线、过强 claim
+  asl paper-writer                               论文写作员 — claim 语言、ablation 报告、rebuttal
 
 Advanced (you rarely need these once you are in chat):
   asl talk [--runtime RUNTIME] <role> [prompt...]
@@ -620,9 +621,9 @@ project_has_runtime_manifest() {
   [ -n "$adapters" ]
 }
 
-project_has_ael_personas() {
+project_has_asl_personas() {
   local role
-  for role in pi advisor writer ra-stata ra-python theorist referee replicator pm; do
+  for role in pi advisor experiment-designer benchmark-engineer evaluation-scientist agent-systems-engineer reproducibility-engineer literature-reviewer referee paper-writer; do
     [ -f "$PWD/.aiplus/agents/personas/$role.md" ] || return 1
   done
 }
@@ -674,7 +675,7 @@ auto_install_available_runtimes() {
 }
 
 ensure_project_ready_for_lobby() {
-  if project_has_runtime_manifest && project_has_ael_personas; then
+  if project_has_runtime_manifest && project_has_asl_personas; then
     load_manifest_runtimes
     return 0
   fi
@@ -997,7 +998,6 @@ doctor_ael_consultant_team_check() {
     'id = "ai_integration"' \
     'id = "top_tier_referee"' \
     'id = "jmp_audience"' \
-    'id = "external_replicator"' \
     'id = "submission"' \
     'id = "working-paper-post"' \
     'id = "referee-response-send"' \
@@ -1074,8 +1074,8 @@ require_delegate_aiplus() {
   raw_version="$(aiplus --version 2>/dev/null | sed -n '/[^[:space:]]/ { p; q; }' || true)"
   parsed_version="$(printf '%s\n' "$raw_version" | extract_version_token)"
   [ -n "$parsed_version" ] || die "could not determine aiplus version. Run \`asl update\`."
-  version_at_least "$parsed_version" "0.6.19" || \
-    die "ASL v0.3.0 requires aiplus v0.6.19+; found $parsed_version. Run \`asl update\`."
+  version_at_least "$parsed_version" "0.7.6" || \
+    die "ASL v0.1.0 requires aiplus v0.7.6+; found $parsed_version. Run \`asl update\`."
 }
 
 role_talk_delegate_args() {
@@ -1111,7 +1111,7 @@ ael_chat_args_error() {
 
 exec_aiplus_delegate() {
   case "${1:-}" in
-    ""|pi|advisor|writer|ra-stata|ra-python|theorist|referee|replicator|pm|talk|route|invite|dismiss|integrate|substrate)
+    ""|pi|advisor|experiment-designer|benchmark-engineer|evaluation-scientist|agent-systems-engineer|reproducibility-engineer|literature-reviewer|referee|paper-writer|talk|route|invite|dismiss|integrate|substrate)
       ;;
     chat)
       [ "$#" -eq 1 ] || ael_chat_args_error
@@ -1138,7 +1138,7 @@ exec_aiplus_delegate() {
       shift
       delegate_args=()
       ;;
-    pi|advisor|writer|ra-stata|ra-python|theorist|referee|replicator|pm)
+    pi|advisor|experiment-designer|benchmark-engineer|evaluation-scientist|agent-systems-engineer|reproducibility-engineer|literature-reviewer|referee|paper-writer)
       local role="$1"
       shift
       role_talk_delegate_args "$role" "$@"
@@ -1180,7 +1180,7 @@ main() {
       usage
       ;;
     -V|--version|version)
-      printf 'ASL %s (aiplus 0.6.19+)\n' "$ASL_VERSION"
+      printf 'ASL %s (aiplus 0.7.6+)\n' "$ASL_VERSION"
       ;;
     install)
       shift
