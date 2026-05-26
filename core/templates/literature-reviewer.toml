@@ -4,7 +4,7 @@ schema_version = "1.0"
 role = "literature-reviewer"
 display_name = "Literature Reviewer"
 tier = "internal_core"
-default_specialty = "TODO Stage 2b"
+default_specialty = "agent-research-field-positioning"
 warm_bench_ttl_seconds = 1800
 
 [persona]
@@ -24,5 +24,5 @@ read_project_memory = true
 write_team_memory = false
 
 [invocation]
-chinese_aliases = ["TODO Stage 2b"]
-english_aliases = ["literature-reviewer", "TODO Stage 2b"]
+chinese_aliases = ["文献定位", "领域定位", "相关工作", "研究脉络"]
+english_aliases = ["literature-reviewer", "field-positioning", "related-work", "prior-work", "agent-literature"]

@@ -4,7 +4,7 @@ schema_version = "1.0"
 role = "paper-writer"
 display_name = "Paper Writer"
 tier = "internal_core"
-default_specialty = "TODO Stage 2b"
+default_specialty = "claim-calibrated-agent-paper-writing"
 warm_bench_ttl_seconds = 1800
 
 [persona]
@@ -24,5 +24,5 @@ read_project_memory = true
 write_team_memory = false
 
 [invocation]
-chinese_aliases = ["TODO Stage 2b"]
-english_aliases = ["paper-writer", "TODO Stage 2b"]
+chinese_aliases = ["论文写作", "主张表述", "结果呈现", "限制说明"]
+english_aliases = ["paper-writer", "claim-writing", "evidence-presentation", "limitations-writing", "rebuttal-drafting"]
