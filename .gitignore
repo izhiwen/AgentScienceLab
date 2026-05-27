@@ -29,5 +29,3 @@ CLAUDE.md
 dist/
 
 *.tar.gz
-
-vendor/aiplus/
