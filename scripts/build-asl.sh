@@ -59,8 +59,8 @@ trap cleanup_synced_asset EXIT
 sync_ael_asset() {
   # tar pipe instead of rsync — rsync is not available on Windows
   # git-bash runners, but tar always is (we rely on it for packaging
-  # anyway). Same exclude semantics: skip .git/.github/vendor/dist/
-  # target subtrees and any media asset files.
+  # anyway). Same exclude semantics: skip repository-local runtime
+  # state, external metadata, build outputs, and media asset files.
   rm -rf "$VENDOR_ROOT/assets/agentsciencelab"
   mkdir -p "$VENDOR_ROOT/assets/agentsciencelab"
   (
@@ -68,9 +68,20 @@ sync_ael_asset() {
     tar -cf - \
       --exclude='./.git' \
       --exclude='./.github' \
+      --exclude='./.aiplus' \
+      --exclude='./.claude' \
+      --exclude='./.codex' \
+      --exclude='./.opencode' \
+      --exclude='./.agents' \
+      --exclude='./.mcp.json' \
+      --exclude='./AGENTS.md' \
+      --exclude='./CLAUDE.md' \
+      --exclude='./opencode.json' \
+      --exclude='./.DS_Store' \
       --exclude='./vendor' \
       --exclude='./dist' \
       --exclude='./target' \
+      --exclude='Thumbs.db' \
       --exclude='*.gif' \
       --exclude='*.png' \
       --exclude='*.jpg' \
