@@ -281,7 +281,7 @@ Expected: no output.
 |---|---|---|---|---|
 | d3c4255 | 2026-05-28 | 36/42 | 6 | Initial pass; 4 content FAILs + 2 criterion-noise. |
 | 166abc3 | 2026-05-28 | 40/42 | 2 | Closed S2.3/S2.4/S2.5/S2.6; 2 criterion-noise remain. |
-| pending | after codify | expected 42/42 | expected 0 | S1.2 and S6.6 revised. |
+| eb30db3 | 2026-05-28 | 42/42 | 0 | S1.2 and S6.6 criteria revised; first clean run; ACCEPT |
 
 ## Future revisions
 
