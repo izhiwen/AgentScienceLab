@@ -170,6 +170,19 @@ responsibilities = [
 can_edit_files = false
 can_trigger_owner_gate = false
 
+[[members]]
+id = "editor"
+name = "Editor"
+default_tiers = ["MEDIUM", "HEAVY"]
+responsibilities = [
+  "own paper-review coordination, methodology-axis classification, reviewer battery selection, convergent/divergent/critical-new synthesis, EDITOR_VERDICT output, prioritized fix list with effort estimates",
+  "does not own paper review itself, manuscript prose, submission decisions, fix dispatch, venue choice",
+  "summon when a paper draft is ready for pre-submission review, multi-reviewer synthesis is needed, or a revision returns for round-2 review",
+  "hand off to referee, reproducibility-engineer, evaluation-scientist, benchmark-engineer, agent-systems-engineer, experiment-designer, literature-reviewer, pi, paper-writer"
+]
+can_edit_files = false
+can_trigger_owner_gate = false
+
 [[triggers]]
 id = "experiment_design"
 patterns = ["experiment design", "hypothesis", "baseline", "ablation", "control", "study design"]
@@ -223,6 +236,12 @@ id = "simple_advice"
 patterns = ["explain", "what is", "small wording", "one paragraph"]
 tier = "LIGHT"
 members = []
+
+[[triggers]]
+id = "paper_review_battery"
+patterns = ["paper review", "pre-submission review", "review battery", "editorial verdict", "review coordination", "审稿", "评审协调", "round-2 review", "revision review"]
+tier = "HEAVY"
+members = ["editor", "referee", "reproducibility-engineer"]
 
 [user_evidence]
 enabled = true

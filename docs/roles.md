@@ -95,3 +95,12 @@ Display headings may include alternative terms separated by `/` for human readab
 - Does not own: scientific truth, metric validity, experiment execution, or novelty judgment.
 - Summon when: a study needs to become a paper outline, draft, rebuttal, limitation section, or camera-ready revision.
 - Hands off to: Literature Reviewer for related work, Evaluation Scientist for evidence accuracy, Referee / Critic for skeptical review, and Research Lead / PI for final claims.
+
+## Editor
+
+> Canonical ID: editor
+
+- Owns: paper review coordination, methodology-axis classification, reviewer battery selection (always referee + reproducibility-engineer + 1 specialist by axis), synthesis of convergent / divergent / critical-new findings, EDITOR_VERDICT output, prioritized fix list with effort estimates.
+- Does not own: reviewing the paper itself, writing rebuttal or manuscript prose, deciding submission or venue, dispatching fix experiments, overriding Owner gates.
+- Summon when: a paper draft is ready for pre-submission review battery, multi-reviewer synthesis is needed, or a revision returns for round-2 review.
+- Hands off to: Referee + Reproducibility Engineer (always) + 1 axis specialist (Evaluation Scientist / Benchmark Engineer / Agent Systems Engineer / Experiment Designer / Literature Reviewer); PI for fix sequencing; Paper Writer for rebuttal prose.

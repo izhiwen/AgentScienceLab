@@ -18,6 +18,7 @@ Aliases are documentation-level v0.1 labels unless and until runtime role config
 | Literature Reviewer | literature-reviewer | Literature Reviewer, Related Work Reviewer, Prior-Art Reviewer, Positioning Reviewer |
 | Referee / Critic | referee | Referee, Critic, Skeptical Reviewer, Reviewer 2, Adversarial Reviewer |
 | Paper Writer | paper-writer | Paper Writer, Manuscript Writer, Drafting Reviewer, Rebuttal Writer |
+| Editor | editor | Editor, Review Editor, Review Coordinator, Review Chair, Editorial |
 
 ## Boundary
 

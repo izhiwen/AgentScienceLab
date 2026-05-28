@@ -57,6 +57,7 @@ Roles you can chat with directly:
   asl literature-reviewer                        文献综述员 — 邻接工作、prior art、定位
   asl referee                                    审稿人 — 找漏洞、缺基线、过强 claim
   asl paper-writer                               论文写作员 — claim 语言、ablation 报告、rebuttal
+  asl editor                                     编辑 — 评审协调、reviewer 派发、verdict 合成
 
 Advanced (you rarely need these once you are in chat):
   asl talk [--runtime RUNTIME] <role> [prompt...]
@@ -623,7 +624,7 @@ project_has_runtime_manifest() {
 
 project_has_asl_personas() {
   local role
-  for role in pi advisor experiment-designer benchmark-engineer evaluation-scientist agent-systems-engineer reproducibility-engineer literature-reviewer referee paper-writer; do
+  for role in pi advisor experiment-designer benchmark-engineer evaluation-scientist agent-systems-engineer reproducibility-engineer literature-reviewer referee paper-writer editor; do
     [ -f "$PWD/.aiplus/agents/personas/$role.md" ] || return 1
   done
 }
@@ -1111,7 +1112,7 @@ ael_chat_args_error() {
 
 exec_aiplus_delegate() {
   case "${1:-}" in
-    ""|pi|advisor|experiment-designer|benchmark-engineer|evaluation-scientist|agent-systems-engineer|reproducibility-engineer|literature-reviewer|referee|paper-writer|talk|route|invite|dismiss|integrate|substrate)
+    ""|pi|advisor|experiment-designer|benchmark-engineer|evaluation-scientist|agent-systems-engineer|reproducibility-engineer|literature-reviewer|referee|paper-writer|editor|talk|route|invite|dismiss|integrate|substrate)
       ;;
     chat)
       [ "$#" -eq 1 ] || ael_chat_args_error
@@ -1138,7 +1139,7 @@ exec_aiplus_delegate() {
       shift
       delegate_args=()
       ;;
-    pi|advisor|experiment-designer|benchmark-engineer|evaluation-scientist|agent-systems-engineer|reproducibility-engineer|literature-reviewer|referee|paper-writer)
+    pi|advisor|experiment-designer|benchmark-engineer|evaluation-scientist|agent-systems-engineer|reproducibility-engineer|literature-reviewer|referee|paper-writer|editor)
       local role="$1"
       shift
       role_talk_delegate_args "$role" "$@"
